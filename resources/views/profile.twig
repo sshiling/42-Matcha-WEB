@@ -1,0 +1,162 @@
+{% extends 'templates/app.twig' %}
+
+{% block title %} Profile - {% endblock %}
+
+{% block content %}
+    <style>
+        .new_notif {
+            /*border: 1px solid;*/
+            font-weight: bold;
+            background: rgba(188, 183, 214, 0.50);
+        }
+    </style>
+
+    <div class="row m-0 p-0">
+        <div class="col-lg-4 col-md-6 p-1">
+            <div class="w-100 mb-2 p-0 rounded bg-mywhite">
+                <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel">
+                    <ol class="carousel-indicators">
+                        <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
+                        {% for key, photo in user.photos %}
+                            <li data-target="#carouselExampleIndicators" data-slide-to="{{ key+1 }}"></li>
+                        {% endfor %}
+                    </ol>
+                    <div class="carousel-inner rounded">
+                        {% if user.avatar %}
+                        <div class="carousel-item active">
+                            <img class="d-block w-100" src="{{ user.avatar }}">
+                        </div>
+                        {% else %}
+                            <div class="carousel-item active">
+                                <img class="d-block w-100" src="{{ path_for('home') }}noatatar.png">
+                            </div>
+                        {% endif %}
+
+                        {% for photo in user.photos %}
+                        <div class="carousel-item">
+                            <img class="d-block w-100" src="{{ photo.path }}">
+                        </div>
+                        {% endfor %}
+
+                    </div>
+                    <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Previous</span>
+                    </a>
+                    <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="sr-only">Next</span>
+                    </a>
+                </div>
+            </div>
+            <div class="w-100 mb-0 p-2 rounded bg-mywhite">
+                <div class="w-100">
+                    <h3 class="m-0">{{ user.firstname }} {{ user.lastname }}</h3>
+                    <p class="py-1 m-0"><b>Age:</b> {% if user.age %} {{ user.age }} {% else %} - {% endif %}</p>
+                    <p class="py-1 m-0">Search:
+                        {% if user.sexual_preference == 2 %}
+                            Male, Fimale
+                        {% elseif user.sexual_preference == 1 %}
+                            Male
+                        {% else %}
+                            Female
+                        {% endif %}
+                    </p>
+                    <p class="py-1 m-0"><b>Location:</b> {{ user.location }}</p>
+                    <p class="py-1 m-0"><b>Interests:</b>
+                        {% for tag in user.tags_list %}
+                            <span class="badge badge-pill badge-primary py-1 px-2">{{ tag }}</span>
+                        {% endfor %}
+                    </p>
+                    <p class="py-1 m-0"><b>Raiting:</b> {{ user.rating }}</p>
+                    <p class="py-1 m-0"><b>Status:</b>
+                        {% if user.is_online %}Online{% else %}Offline{% endif %}
+                    </p>
+                    <p class="py-1 m-0"><b>Last visit:</b> {{ (user.time_of_last_visit-7200)|date('d.m.Y G:i:s') }}</p>
+                    <p class="py-1 m-0"><b>Bio:</b> {{ user.biography }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8 col-md-6 p-1" style="height: 100%; overflow: hidden;">
+            <div class="bg-mywhite rounded p-1">
+                <div class="w-100 rounded" style="/*max-height: 700px; overflow: auto;*/">
+                {% for ntf in notif %}
+                <div class="media px-2 py-1 {% if ntf.status == 0 %}new_notif{% endif %}">
+                    <div class="media-body d-flex flex-column flex-lg-row">
+                        <div class="">
+                            <small><b>{{ (ntf.add_time-7200)|date("d.m.Y H:i:s") }}</b></small>
+                        </div>
+
+                        <div class="px-2">
+                            <a class="w-100" href="/user/{{ ntf.sid }}">{{ ntf.text }}</a>
+                        </div>
+
+                    </div>
+                </div>
+                {% else %}
+                    <div class="w-100 p-2 text-center"> - History is empty - </div>
+                {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+
+    <script>
+        (function() {
+            var who = "{{ who }}";
+            var whom = "{{ whom }}";
+            var host = window.location.hostname;
+            var conn = new WebSocket('ws://'+host+':8083/?who=' + who + '&whom=' + whom); // send param who and whom to socket constructor via link
+            conn.onopen = function (e) { /*console.log("Connection established!");*/ };
+            conn.onmessage = function (e) {
+                var data = $.parseJSON(e.data);
+
+                if (data.type) {
+                    var text = '';
+                    if (data.type === 'view')
+                        text = "<a href='/user/"+data.who+"'>User</a> visit your page.";
+                    else if (data.type === 'connect' || data.type === 'disconnect')
+                        text = "<a href='/user/"+ data.who +"'><b>User</b><a/> " + data.type + "ed you.";
+                    else if(data.type === 'msg')
+                        text = "<a href='/user/"+ data.who +"'><b>" + data.sender + "</b></a>: <br>" + data.msg;
+                    else
+                        text = "<a href='/user/"+ data.who +"'><b>User</b></a> "+data.type+" you.";
+                    add_notif(text);
+
+                    update_notif();
+                }
+            };
+
+            function send_event(data) {
+                data.who = who;
+                data.whom = whom;
+                conn.send(JSON.stringify(data));
+            }
+
+            function add_notif(text) {
+                var notifs = $('#notifs');
+                var newn = $("<div class=\"alert alert-success p-2\" >" + text + "</div>");
+
+                var audio = new Audio('/telegram.mp3');
+                audio.play();
+
+                notifs.append(newn);
+                setTimeout(function () {
+                    newn.remove();
+                }, 5000);
+            }
+
+            function update_notif() {
+                var notif = $("#new_notif");
+                var n = Number(notif.text());
+                notif.text(n+1);
+                notif.show();
+            }
+        })();
+    </script>
+
+{% endblock %}

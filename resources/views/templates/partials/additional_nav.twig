@@ -1,0 +1,14 @@
+<div class="nav-scroller bg-mywhite">
+    <div class="container p-0">
+        <nav class="nav nav-underline">
+            <a class="nav-link" href="{{ path_for('home') }}">Search</a>
+            <a class="nav-link" href="{{ path_for('profile') }}">
+                Profile
+                <span class="badge badge-pill badge-primary" id="new_notif" style="display: none;"></span>
+            </a>
+            <a class="nav-link" href="{{ path_for('edit') }}">Edit</a>
+            <a class="nav-link active" href="{{ path_for('chat') }}">Chat</a>
+            <a class="nav-link active" href="/map">Map</a>
+        </nav>
+    </div>
+</div>

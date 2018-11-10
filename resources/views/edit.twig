@@ -1,0 +1,520 @@
+{% extends 'templates/app.twig' %}
+
+{% block title %} Edit Profile - {% endblock %}
+
+{% block content %}
+
+    <style>
+        .avatar {
+            width: 300px;
+            height: 300px;
+            border: 1px dashed rgba(0, 0, 0, 0.5);
+            background: #fff center center no-repeat;
+            background-size: 100% 100%;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .tag_box {
+            display: inline-block;
+            margin: 0 0.25rem 0.25rem 0;
+            /*padding: 0.5rem 0.75rem;*/
+            /*line-height: 0.75rem;*/
+            overflow: hidden;
+
+            border: 0px solid #fff;
+            border-radius: 4px;
+            box-shadow: 2px 2px 5px #b0b0b0;
+            background: #007bff;
+            color: #ffffff;
+        }
+
+        .tag_box span {
+            margin: 0;
+            padding: 0.25rem 0.75rem;
+        }
+
+        .tag_box .del_tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        #avatar { display: none; }
+    </style>
+
+    <div class="row m-auto mb-2 p-0 rounded bg-mywhite">
+
+        <div class="col-md-5 col-lg-4 p-2">
+            <div class="row m-0 p-2 w-100 text-center" id="photo_list">
+
+                <div class="w-100 my-0 p-0 pb-2 text-center">
+                    <form name="photo" id="imageUploadForm" enctype="multipart/form-data" action="/load_photo" method="post">
+                        <input class="form-control-file" type="file" id="ImageBrowse" name="image" hidden/>
+                        <div class="btn-group w-100">
+                            <button type="button" class="btn btn-light w-100" id="btn_image">File select</button>
+                            <input type="submit" name="upload" class="btn btn-primary" value="Upload photo" />
+                        </div>
+                    </form>
+                </div>
+
+                <div class="col p-2 bg-light rounded"><img src="{% if user.avatar %}{{ user.avatar }}{% else %}/img/logo.png{% endif %}" data-p="{{ user.avatar }}" class="img-fluid rounded" id="user_avatar"></div>
+                <div class="w-100"></div>
+                {% for photo in user.photos %}
+                    <div class="col-3 col-sm-3 p-1"><img src="{{ photo.path }}" class="img-fluid rounded user_photos" data-p="{{ photo.path }}"></div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-md-7 col-lg-8 p-2" style="max-width: 720px;">
+            <form method="post" name="edit_form" id="edit_form">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="firstname">First name:</label>
+                        <input type="text" class="form-control" id="firstname" name="firstname" value="{{ user.firstname }}" placeholder="First name" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="lastname">Last name:</label>
+                        <input type="text" class="form-control" id="lastname" name="lastname" value="{{ user.lastname }}" placeholder="Last name" required>
+                    </div>
+                </div>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="inputEmail4">Email:</label>
+                        <input type="email" class="form-control" id="inputEmail4" name="email" value="{{ user.email }}" placeholder="Email" required>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="age">Age:</label>
+                        <input type="number" class="form-control" id="age" name="age" min="18" max="100" value="{{ user.age }}" placeholder="Age" required>
+                    </div>
+                </div>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group col">
+                        <label for="gender">Gender:</label>
+                        <select class="form-control" name="gender" id="gender">
+                            <option value="1" {% if user.gender == 1 %}selected{% endif %}>Male</option>
+                            <option value="0" {% if user.gender == 0 %}selected{% endif %}>Female</option>
+                        </select>
+                    </div>
+                </div>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group col">
+                        <label for="sexual_preference">Sexual Preference:</label>
+                        <select class="form-control" name="sexual_preference" id="sexual_preference">
+                            <option value="2" {% if user.sexual_preference == 2 %}selected{% endif %}>Bi</option>
+                            <option value="1" {% if user.sexual_preference == 1 %}selected{% endif %}>Male</option>
+                            <option value="0" {% if user.sexual_preference == 0 %}selected{% endif %}>Female</option>
+                        </select>
+                    </div>
+                </div>
+                <hr>
+                <div class="form-group">
+                    <label for="biography">Bio:</label>
+                    <textarea class="form-control" name="biography" id="biography" required>{{ user.biography }}</textarea>
+                </div>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group col-12" id="tag_list">
+                        {% for key, tag in user.tags_list if user.tags_list %}
+                            {% if tag %}
+                            <span class="tag_box"><span>{{ tag }}</span><span class="del_tag" data-key="{{ key }}">&times;</span></span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="form-group col-8">
+                        <input type="text" class="form-control" name="new_tag" id="new_tag" maxlength="25">
+                        <input type="hidden" name="tags" value="{{ user.tags }}">
+                    </div>
+                    <div class="form-group col-4">
+                        <button type="button" class="btn btn-primary w-100" id="add_new_tag">Add new tag</button>
+                    </div>
+                </div>
+                <hr>
+                <div class="form-row px-2 pb-2">
+                    <b>Location: {{ user.location }}</b>
+                </div>
+                <div class="form-row">
+                    <div class="form-group p-2 w-100">
+                        <div class="w-100" id="map" style="height: 300px"></div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-12">
+                        <input type="hidden" name="latitude" id="latitude" value="{{ user.latitude }}">
+                        <input type="hidden" name="longitude" id="longitude" value="{{ user.longitude }}">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="location" id="location" value="{{ user.location }}" placeholder="Location">
+                            <div class="input-group-append" id="button-addon4">
+                                <button type="button" class="btn btn-primary w-50" id="setLoc">Set</button>
+                                <button type="button" class="btn btn-primary w-50" id="getLoc">Get</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+                <div class="form-group text-center" id="st">
+                    <button type="submit" id="submit" class="btn btn-primary w-50">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        var map;
+        var mark;
+        var geocoder;
+
+        var lat = Number($("#latitude").val());
+        var lng = Number($("#longitude").val());
+        lat = lat ? lat : 0;
+        lng = lng ? lng : 0;
+
+        function initMap() {
+            var markco = {lat: lat, lng: lng};
+            var mapCanvas = document.getElementById('map');
+            var mapOptions = { center: markco, zoom: 7};
+            map = new google.maps.Map(mapCanvas, mapOptions);
+            geocoder = new google.maps.Geocoder;
+            mark = new google.maps.Marker({map: map, position: markco, animation: google.maps.Animation.BOUNCE});
+            map.setZoom(14);
+
+            map.addListener('click', function(e) {
+                var point = {lat: e.latLng.lat(), lng: e.latLng.lng()};
+
+                mark.setPosition(point);
+                $("#latitude").val(point.lat);
+                $("#longitude").val(point.lng);
+            });
+        }
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            $('#imageUploadForm').on('submit',(function(e) {
+                e.preventDefault();
+                if ($("#ImageBrowse").val().length == 0)
+                    return ;
+
+                var formData = new FormData(this);
+
+                if (!(/image\/[jpeg|png]/.test(formData.get('image').type))) {
+                    $("#ImageBrowse").val('');
+                    return ;
+                }
+
+                $.ajax({
+                    type:'POST',
+                    url: $(this).attr('action'),
+                    data: formData,
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    dataType: "json",
+                    success:function(data){
+                        $("#ImageBrowse").val('');
+                        // console.log(data);
+                        if (!data.error)
+                            $("<div class=\"col-3 col-sm-3 p-1 bg-light\"><img src=\""+data+"\" class=\"img-fluid user_photos\" data-p=\""+data+"\"></div>\n").appendTo("#photo_list");
+                    },
+                    error: function(data){
+                        // console.log(data);
+                    }
+                });
+            }));
+            $("#btn_image").on('click', function () {
+                $("#ImageBrowse").click();
+            });
+            $("body").on('click', ".user_photos", function () {
+                var pic = this;
+                var pid = this.dataset.p;
+
+                $.ajax({
+                    type:'POST',
+                    url: "{{ path_for('setava') }}",
+                    data: { pid: pid },
+                    cache: false,
+                    dataType: "json",
+                    success:function(data){
+                        swap_ava(pic);
+                    },
+                    error: function(data){
+//                        console.log(data);
+                    }
+                });
+            });
+            function swap_ava(e) {
+                var a = $("#user_avatar")[0];
+                var tmp = e.src;
+                e.src = a.src;
+                a.src = tmp;
+                tmp = e.dataset.p;
+                e.dataset.p = a.dataset.p;
+                a.dataset.p = tmp;
+            }
+        });
+    </script>
+
+    <script>
+        var who = "{{ who }}";
+        var whom = "{{ whom }}";
+        var host = window.location.hostname;
+        // console.log(who + " / " + whom);
+
+        var conn = new WebSocket('ws://'+host+':8083/?who=' + who + '&whom=' + whom); // send param who and whom to socket constructor via link
+        conn.onopen = function (e) {
+//            console.log("Connection established!");
+        };
+        conn.onmessage = function (e) {
+            var data = $.parseJSON(e.data);
+
+            if (data.type) {
+                var text = '';
+                if (data.type === 'view')
+                    text = "<a href='/user/"+data.who+"'>User</a> visit your page.";
+                else if (data.type === 'connect' || data.type === 'disconnect')
+                    text = "<a href='/user/"+ data.who +"'><b>User</b><a/> " + data.type + "ed you.";
+                else if(data.type === 'msg')
+                    text = "<a href='/user/"+ data.who +"'><b>" + data.sender + "</b></a>: <br>" + data.msg;
+                else
+                    text = "<a href='/user/"+ data.who +"'><b>User</b></a> "+data.type+" you.";
+                add_notif(text, 'success');
+                update_notif();
+            }
+        };
+
+        function send_event(data) {
+            data.who = who;
+            data.whom = whom;
+            conn.send(JSON.stringify(data));
+        }
+
+        function add_notif(text, type = 'success') {
+            var notifs = $('#notifs');
+            var newn = $("<div class=\"alert alert-"+type+" p-2\" >" + text + "</div>");
+
+            var audio = new Audio('/telegram.mp3');
+            audio.play();
+
+            notifs.append(newn);
+            setTimeout(function () {
+                newn.remove();
+            }, 5000);
+        }
+
+        function update_notif() {
+            var notif = $("#new_notif");
+            var n = Number(notif.text());
+            notif.text(n+1);
+            notif.show();
+        }
+    </script>
+
+    <script>
+        function getCity(point) {
+            geocoder.geocode({'latLng' : point}, function(results, status) {
+                if (status === 'OK') {
+                    if (results[1]) {
+                        var country = null, city = null;
+                        var c, lc, component;
+                        for (var r = 0, rl = results.length; r < rl; r += 1) {
+                            var result = results[r];
+                            if (!city && result.types[0] === 'locality') {
+                                for (c = 0, lc = result.address_components.length; c < lc; c += 1) {
+                                    component = result.address_components[c];
+                                    if (component.types[0] === 'locality') {
+                                        city = component.long_name;
+                                        break;
+                                    }
+                                }
+                            }
+                            else if (!city && result.types[0] === 'administrative_area_level_1') {
+                                for (c = 0, lc = result.address_components.length; c < lc; c += 1) {
+                                    component = result.address_components[c];
+                                }
+                            } else if (!country && result.types[0] === 'country') {
+                                country = result.address_components[0].long_name;
+                            }
+                            if (city && country) {
+                                break;
+                            }
+                        }
+                        // console.log(country + ", " + city);
+                        $("#location").val(country + ", " + city);
+                        $("#latitude").val(point.lat);
+                        $("#longitude").val(point.lng);
+                    }
+                }
+            });
+        }
+
+        function success(pos) {
+            var crd = pos.coords;
+            var point = {lat: crd.latitude, lng: crd.longitude};
+            mark.setPosition(point);
+            map.setCenter(point);
+            map.setZoom(12);
+            getCity(point);
+        }
+
+        function error(err) {} // console.log(err); }
+
+        var options = {
+            enableHighAccuracy: true,
+            timeout: 50000,
+            maximumAge: 0
+        };
+
+        $("#getLoc").on('click', function (e) {
+            $.ajax({
+                type: "GET",
+                url: "https://api.ipgeolocation.io/ipgeo",
+                data: {
+                    apiKey: '6f7921ea18b347f3983c3d33e9762412',
+                    fields: 'country_name,city,latitude,longitude'
+                },
+                dataType: "json",
+                success: function(data){
+                    var point = { lat: Number(data.latitude), lng: Number(data.longitude) };
+                    mark.setPosition(point);
+                    map.setCenter(point);
+                    map.setZoom(12);
+                    getCity(point);
+                    navigator.geolocation.getCurrentPosition(success, error, options);
+                },
+                failure: function(errMsg) {
+//                    console.log(errMsg);
+                    navigator.geolocation.getCurrentPosition(success, error, options);
+                }
+            });
+        });
+
+        $(document).ready(function () {
+            if ($("#longitude").val() === '0' || $("#latitude").val() === '0')
+                $("#getLoc").click();
+        });
+
+        $("#setLoc").on('click', function (e) {
+            var address = $('#location').val();
+            if (address.length === 0) {
+                // alert('Enter location!');
+                add_notif('Enter location!');
+                return;
+            }
+            geocoder.geocode({'address': address}, function(results, status) {
+                if (status === 'OK') {
+                    map.setCenter(results[0].geometry.location);
+                    getCity(results[0].geometry.location);
+                    mark.setPosition(results[0].geometry.location);
+                } else {
+                    add_notif('Enter valid location!', 'danger');
+                    // console.log('Geocode was not successful for the following reason: ' + status)
+                }
+            });
+        });
+
+
+        $("#add_new_tag").on('click', function (e) {
+            var tag_input = $("#new_tag");
+            var tags = $("[name='tags']");
+
+            if (tag_input.val().length === 0)
+                return ;
+
+            var taglist = tags.val().trim().length > 0 ? tags.val().split(',') : [];
+            var new_tags = tag_input.val().split(',');
+
+            for (var i = 0; i < new_tags.length; i++) {
+                new_tags[i] = new_tags[i].trim().replace(/ /g, '_');
+                if (new_tags[i].length > 0)
+                    taglist.push(new_tags[i].trim().replace(/ /g, '_'));
+            }
+
+//            console.log(taglist);
+            rewrite_tags(taglist);
+
+            tag_input.val('');
+            tags.val( taglist.join() );
+//            console.log( tags.val() );
+        });
+
+        $('body').on('click', '.del_tag', function (e) {
+            var n = this.dataset.key;
+            var tags = $("[name='tags']");
+            var arr_tags = tags.val().split(',');
+
+            arr_tags.splice(n, 1);
+            rewrite_tags(arr_tags);
+
+            $(this).parent().remove();
+            tags.val( arr_tags.join() );
+//            console.log(n);
+        });
+
+        function rewrite_tags(list) {
+            var tags = $('#tag_list');
+            tags.html('');
+            for(var i = 0; i < list.length; i++) {
+                list[i] = list[i].trim().replace(/ /g, '_');
+                if (list[i].length === 0)
+                    continue;
+
+                var el = ' <span class="tag_box"><span>' + list[i] + '</span><span class="del_tag" data-key="'+ i +'">&times;</span></span>';
+                tags.append(el);
+            }
+        }
+
+
+
+
+
+        $("#edit_form").submit(function (e) {
+            $("#submit").attr("disabled", true);
+
+            var data = {
+                firstname:          $("[name='firstname']").val(),
+                lastname:           $("[name='lastname']").val(),
+                email:              $("[name='email']").val(),
+                age:                $("[name='age']").val(),
+                gender:             $("[name='gender']").val(),
+                sexual_preference:  $("[name='sexual_preference']").val(),
+                biography:          $("[name='biography']").val(),
+                tags:               $("[name='tags']").val(),
+                password:           $("[name='password']").val(),
+                location:           $("#location").val(),
+                longitude:          $("#longitude").val(),
+                latitude:           $("#latitude").val()
+            };
+
+            $.ajax({
+                type: "POST",
+                url: "{{ path_for('edit') }}",
+                data: data,
+                dataType: "json",
+                success: function(data){
+                    if (data.st)
+                        add_notif(data.msg, 'danger');
+                    else
+                        add_notif("Profile has been successfully saved");
+
+                    $("#submit").removeAttr("disabled");
+                },
+                failure: function(errMsg) {
+//                    console.log(errMsg);
+                    $("#submit").removeAttr("disabled");
+                }
+            });
+
+            e.preventDefault();
+        });
+
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZUY68czRsRm5cv_agpr5UDtAwdWWs10E&callback=initMap"
+            async defer></script>
+{% endblock %}

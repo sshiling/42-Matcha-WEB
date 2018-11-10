@@ -1,0 +1,16 @@
+{% extends 'templates/app.twig' %}
+
+{% block title %} Main page - {% endblock %}
+
+{% block content %}
+    <style>
+        .msg {
+            max-width: 320px;
+        }
+    </style>
+
+    <div class="msg m-auto bg-mywhite rounded p-3 text-center">{{ msg }}</div>
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}

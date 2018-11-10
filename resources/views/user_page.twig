@@ -1,0 +1,192 @@
+{% extends 'templates/app.twig' %}
+
+{% block content %}
+
+    <div class="my-2 mx-auto rounded-circle" style="width: 300px; height: 300px; background: url('{{ user.avatar }}') center no-repeat; background-size: 100%;"></div>
+
+    <div class="flex m-auto rounded bg-mywhite" style="max-width: 720px;">
+
+            <div class="w-100 text-center position-relative rounded-top" style="min-height: 50px; overflow: hidden;">
+
+                <div class="bg-mywhite p-2">
+                    {% if like  %}
+                        <div class="btn btn-warning" id="like" data-uid="{{ user.id }}">
+                            {% if connect %} Disconnect {% else %} Dislike {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="btn btn-success" id="like" data-uid="{{ user.id }}">
+                            {% if connect %} Connect {% else %} Like {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="row w-100 p-0 m-0">
+                    {% for photo in user.photos %}
+                        <div class="col-3 p-0"><img src="{{ photo.path }}" class="img-fluid"></div>
+                    {% endfor %}
+                </div>
+
+            </div>
+
+            <div class="w-100 p-3">
+                <h4>{{ user.firstname }} {{ user.lastname }}</h4>
+                <div><b>Age:</b> {% if user.age %} {{ user.age }} {% else %} - {% endif %}</div>
+                <div>
+                    {% if user.sexual_preference == 2 %}
+                        <b>Sexual Preferences:</b> bi
+                    {% elseif user.sexual_preference == 1 %}
+                        <b>Sexual Preferences:</b> Male
+                    {% else %}
+                        <b>Sexual Preferences:</b> Female
+                    {% endif %}
+                </div>
+                <div><b>Location:</b> {{ user.location }}</div>
+                <div><b>Interests:</b> </div>
+                    {% for tag in user.tags_list %}
+                        <span class="badge badge-pill badge-primary py-1 px-2">{{ tag }}</span>
+                    {% endfor %}
+                <div><b>Raiting:</b> {{ user.rating }}</div>
+                <div><b>Status:</b> {% if user.is_online %}Online{% else %}Offline{% endif %}</div>
+                <div><b>Last visit:</b> {{ (user.time_of_last_visit-7200)|date('d.m.Y G:i:s') }}</div>
+                <div><b>Bio:</b> {{ user.biography }}</div>
+            </div>
+            <div class="w-100 border-top p-0">
+                <div class="w-100" style="height: 300px; background: #ddd;">
+                    <div class="w-100" id="map" style="height: 100%"></div>
+                </div>
+            </div>
+            <div class="w-100 border-top text-center p-2">
+                <div class="btn btn-outline-warning" id="report" data-uid="{{ user.id }}">Report</div>
+                <div class="btn btn-outline-danger" id="block" data-uid="{{ user.id }}">Block</div>
+            </div>
+        </div>
+{% endblock %}
+
+{% block scripts %}
+
+    <script>
+    (function() {
+        var who = "{{ who }}";
+        var whom = "{{ whom }}";
+        var like = "{{ like }}";
+        var connect = "{{ connect }}";
+//         console.log("who: " + who + " / " + "whom: " + whom + " / " + "like: " + like + " / " + "connect: " + connect);
+
+        var host = window.location.hostname;
+        var conn = new WebSocket('ws://'+host+':8083/?who=' + who + '&whom=' + whom); // send param who and whom to socket constructor via link
+
+        conn.onopen = function (e) {
+//            console.log("Connection established!");
+            send_event({type: 'view'});
+        };
+        conn.onmessage = function (e) {
+            var data = $.parseJSON(e.data);
+
+            if (data.type) {
+                var text = '';
+                if (data.type === 'view')
+                    text = "<a href='/user/"+data.who+"'>User</a> visit your page.";
+                else if (data.type === 'connect' || data.type === 'disconnect')
+                    text = "<a href='/user/"+ data.who +"'><b>User</b><a/> " + data.type + "ed you.";
+                else if(data.type === 'msg')
+                    text = "<a href='/user/"+ data.who +"'><b>" + data.sender + "</b></a>: <br>" + data.msg;
+                else
+                    text = "<a href='/user/" + data.who + "'><b>User</b></a> " + data.type + " you.";
+                add_notif(text);
+                update_notif();
+            }
+        };
+
+        function send_event(data) {
+            data.who = who;
+            data.whom = whom;
+            conn.send(JSON.stringify(data));
+        }
+
+        function add_notif(text) {
+            var notifs = $('#notifs');
+            var newn = $("<div class=\"alert alert-success p-2\" >" + text + "</div>");
+
+            var audio = new Audio('/telegram.mp3');
+            audio.play();
+
+            notifs.append(newn);
+            setTimeout(function () {
+                newn.remove();
+            }, 5000);
+        }
+
+        function update_notif() {
+            var notif = $("#new_notif");
+            var n = Number(notif.text());
+            notif.text(n+1);
+            notif.show();
+        }
+
+
+
+        var uid = {{ user.id }};
+        $("#like").on('click', function (e) {
+            $.ajax({
+                type: "POST", url: "{{ path_for('like') }}",
+                data: { uid: uid }, dataType: "json",
+                success: function(data){
+//                    console.log(data);
+                    if (data.st === 1 || data.st === 2) {
+                        $("#like").removeClass("btn-success").addClass("btn-warning").text("Dislike");
+                        send_event({type: 'like'});
+                        if (data.st === 2) {
+                            $("#like").text('Disconnect');
+                            send_event({type: 'connect'});
+                        }
+                    } else {
+                        $("#like").removeClass("btn-warning").addClass("btn-success").text("Like");
+                        send_event({type: 'dislike'});
+                        if (data.st === 4) {
+//                            $("#like").text('Connect');
+                            send_event({type: 'disconnect'});
+                        }
+                    }
+                },
+                failure: function(errMsg) {} // console.log(errMsg); }
+            });
+        });
+
+        $("#block").on('click', function (e) {
+            $.ajax({
+                type: "POST", url: "{{ path_for('block') }}",
+                data: { uid: uid }, dataType: "json",
+                success: function(data){}, // console.log(data); },
+                failure: function(errMsg) {} // console.log(errMsg); }
+            });
+        });
+        $("#report").on('click', function (e) {
+            $.ajax({
+                type: "POST", url: "{{ path_for('report') }}",
+                data: { uid: uid }, dataType: "json",
+                success: function(data){}, // console.log(data); },
+                failure: function(errMsg) {} // console.log(errMsg); }
+            });
+        });
+
+    })();
+    </script>
+
+    <script>
+        function initMap() {
+            var point = {
+                lat: {{ user.latitude }},
+                lng: {{ user.longitude }}
+            };
+            var map = new google.maps.Map(document.getElementById('map'), {
+                center: point,
+                zoom: 5
+            });
+            var mark = new google.maps.Marker({
+                map: map,
+                position: point
+            });
+        }
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZUY68czRsRm5cv_agpr5UDtAwdWWs10E&callback=initMap" async defer></script>
+{% endblock %}

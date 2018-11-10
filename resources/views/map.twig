@@ -1,0 +1,129 @@
+{% extends 'templates/app.twig' %}
+
+{% block title %} User Gloabal Map - {% endblock %}
+
+{% block content %}
+<style>
+    .map_wrap {
+        width: 100%;
+        height: calc(100vh - 150px);
+        min-height: 200px;
+        background: #2b2b2b;
+        border: 0px solid;
+    }
+
+    #map {
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+<div class="map_wrap">
+    <div id="map"></div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+    <script>
+        (function() {
+            var who = "{{ who }}";
+            var whom = "0";
+            // console.log(who + " / " + whom);
+            var host = window.location.hostname;
+            var conn = new WebSocket('ws://'+host+':8083/?who=' + who + '&whom=' + whom);
+            conn.onopen = function (e) {}; // console.log("Connection established!"); };
+            conn.onmessage = function (e) {
+                var data = $.parseJSON(e.data);
+//                console.log(data);
+                if (data.type) {
+                    var text = '';
+                    if (data.type === 'view')
+                        text = "<a href='/user/"+data.who+"'>User</a> visit your page.";
+                    else if (data.type === 'connect' || data.type === 'disconnect')
+                        text = "<a href='/user/"+ data.who +"'><b>User</b><a/> " + data.type + "ed you.";
+                    else if(data.type === 'msg')
+                        text = "<a href='/user/"+ data.who +"'><b>" + data.sender + "</b></a>: <br>" + data.msg;
+                    else
+                        text = "<a href='/user/"+ data.who +"'><b>User</b></a> "+data.type+" you.";
+                    add_notif(text);
+                    update_notif();
+                }
+            };
+
+            function send_event(data) {
+                data.who = who;
+                data.whom = whom;
+                conn.send(JSON.stringify(data));
+            }
+
+            function add_notif(text) {
+                var notifs = $('#notifs');
+                var newn = $("<div class=\"alert alert-success p-2\" >" + text + "</div>");
+
+                var audio = new Audio('/telegram.mp3');
+                audio.play();
+
+                notifs.append(newn);
+                setTimeout(function () {
+                    newn.remove();
+                }, 5000);
+            }
+
+            function update_notif() {
+                var notif = $("#new_notif");
+                var n = Number(notif.text());
+                notif.text(n+1);
+                notif.show();
+            }
+        })();
+    </script>
+
+    <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDZUY68czRsRm5cv_agpr5UDtAwdWWs10E&callback=initMap" async defer></script>
+    <script>
+        var map;
+        var mark_array = [];
+        var infoWindow;
+        var marker;
+        var locations = [];
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 50, lng: 30 },
+                zoom: 5
+            });
+            infoWindow = new google.maps.InfoWindow;
+        }
+
+        $.ajax({
+            type: "POST",
+            url: "{{ path_for('getmap') }}",
+            dataType: "json",
+            success: function(data){
+                mark_array = data;
+                for(var i = 0; i < data.length; i++)
+                    locations[i] = {lat: data[i].latitude, lng: data[i].longitude};
+
+                marker = locations.map(function(location, i) {
+                    var mark = new google.maps.Marker({
+                        position: location
+                    });
+                    google.maps.event.addListener(mark, 'click', (function(marker, i) {
+                        return function() {
+                            infoWindow.setContent(`<div class="text-center" style="width: 100px;"><img src="${mark_array[i]['pic']}" width="100%">${mark_array[i]['name']}</div>`);
+                            infoWindow.open(map, marker);
+                        }
+                    })(mark, i));
+                    return mark;
+                });
+
+                var markerCluster = new MarkerClusterer(map, marker,
+                    {imagePath: 'https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/m'});
+            },
+            failure: function(errMsg) {} // console.log(errMsg); }
+        });
+    </script>
+
+{% endblock %}

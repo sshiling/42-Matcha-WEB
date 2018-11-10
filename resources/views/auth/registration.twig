@@ -1,0 +1,89 @@
+{% extends '/templates/app.twig' %}
+
+{% block title %} Регистрация - {% endblock %}
+
+{% block content %}
+    <div class="my-3 mx-auto p-0" style="max-width: 320px;">
+        <h3 class="text-center ">Регистрация</h3>
+        <form class="p-2 rounded bg-mywhite" method="post" id="reg_form">
+            <div class="form-row mb-2">
+                <div class="col">
+                    <input type="text" class="form-control" name="firstname" placeholder="First name">
+                </div>
+                <div class="col">
+                    <input type="text" class="form-control" name="lastname" placeholder="Last name">
+                </div>
+            </div>
+            <div class="form-group mb-2">
+                <input type="email" class="form-control" name="email" placeholder="Email">
+            </div>
+            <div class="form-group mb-2">
+                <input type="text" class="form-control" name="login" placeholder="Login">
+            </div>
+            <div class="form-group mb-2">
+                <div class="form-row">
+                    <div class="col">
+                        <input type="password" class="form-control" name="password" placeholder="password">
+                    </div>
+                    <div class="col">
+                        <input type="password" class="form-control" name="re_password" placeholder="re-password">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group mt-2 mb-0">
+                <button class="btn btn-outline-primary w-100" id="submit">Sign-up</button>
+            </div>
+
+            <div class="" id="st_msg"></div>
+        </form>
+
+        <div class="alert alert-warning p-2 my-3 text-center" role="alert">
+            У вас уже есть аккаунта? <a href="{{ path_for('auth.signin') }}">Вход</a>.
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        (function() {
+
+            $("#reg_form").submit(function (e) {
+
+                var data = {
+                    firstname:  $("[name='firstname']").val(),
+                    lastname:   $("[name='lastname']").val(),
+                    email:      $("[name='email']").val(),
+                    login:      $("[name='login']").val(),
+                    password:   $("[name='password']").val(),
+                    re_password:$("[name='re_password']").val()
+                };
+
+                $("#submit").attr("disabled", true);
+
+                $.ajax({
+                    type: "POST",
+                    url: "{{ path_for('auth.signup') }}",
+                    data: data,
+                    dataType: "json",
+                    success: function(data){
+                        if (data.st) {
+                            $("#st_msg").attr('class', "alert alert-danger m-0 mt-2 p-2").text(data.msg);
+                            $("#submit").removeAttr("disabled");
+                        } else {
+                            $("#st_msg").attr('class', "alert alert-success m-0 mt-2 p-2").text(data.msg);
+                            setTimeout(function(){
+                                window.location.replace("{{ path_for('email_sent') }}")
+                            }, 2000);
+                        }
+//                        console.log(data);
+                    },
+                    failure: function(errMsg) {
+//                        console.log(errMsg);
+                    }
+                });
+
+                e.preventDefault();
+            });
+        })();
+    </script>
+{% endblock %}

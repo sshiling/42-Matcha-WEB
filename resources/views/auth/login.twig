@@ -1,0 +1,65 @@
+{% extends '/templates/app.twig' %}
+
+{% block title %} Login - {% endblock %}
+
+{% block content %}
+    <div class="my-3 mx-auto p-0" style="max-width: 320px; /*min-height: 75vh;*/">
+        <h3 class="text-center">Авторизация</h3>
+        <form class="p-2 rounded bg-mywhite" method="post" id="login_form">
+            <div class="form-group mb-2">
+                <input type="text" class="form-control" name="login" placeholder="Login" required>
+            </div>
+            <div class="form-grou mb-2">
+                <input type="password" class="form-control" name="password" placeholder="Password" required>
+            </div>
+            <div class="form-group m-0">
+                <button type="submit" class="btn btn-outline-primary w-100">Sign-up</button>
+            </div>
+
+            <div id="st_msg"></div>
+
+        </form>
+
+        <div class="alert alert-warning p-2 my-3 text-center" role="alert">
+            Забыли пароль? <a href="{{ path_for('restore') }}">Восстановить</a>.<br>
+            У вас нет аккаунта? <a href="{{ path_for('auth.signup') }}">Регистрация</a>.
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function() {
+
+        $("#login_form").submit(function (e) {
+
+            var login = $("[name='login']").val();
+            var pwd = $("[name='password']").val();
+
+            $.ajax({
+                type: "POST",
+                url: "{{ path_for('auth.signin') }}",
+                data: {login: login, password: pwd},
+//                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(data){
+                    if (data.st) {
+                        $("#st_msg").attr('class', "alert alert-danger m-0 mt-2 p-2").text(data.msg);
+                    } else {
+                        $("#st_msg").attr('class', "alert alert-success m-0 mt-2 p-2").text(data.msg);
+                        setTimeout(function(){
+                            window.location.replace("{{ path_for('home') }}")
+                        }, 2000);
+                    }
+//                    console.log(data);
+                },
+                failure: function(errMsg) {
+//                    console.log(errMsg);
+                }
+            });
+
+            e.preventDefault();
+        });
+    })();
+</script>
+{% endblock %}

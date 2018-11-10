@@ -1,0 +1,51 @@
+{% extends '/templates/app.twig' %}
+
+{% block title %} Login - {% endblock %}
+
+{% block content %}
+    <div class="my-3 mx-auto p-0" style="max-width: 320px; /*min-height: 75vh;*/">
+        <h3 class="text-center">Восстановление Пароля</h3>
+        <form class="p-2 rounded bg-mywhite" method="post" id="restore_form">
+            <div class="form-grou mb-2">
+                <input type="email" class="form-control" name="email" placeholder="Email" required>
+            </div>
+            <div class="form-group m-0">
+                <button type="submit" class="btn btn-outline-primary w-100">Confirm</button>
+            </div>
+
+            <div id="st_msg"></div>
+
+        </form>
+
+        <div class="alert alert-warning p-2 my-3 text-center" role="alert">
+            У вас уже есть аккаунт? <a href="{{ path_for('auth.signin') }}">Вход</a>.<br>
+            У вас нет аккаунта? <a href="{{ path_for('auth.signup') }}">Регистрация</a>.
+        </div>
+    </div>
+
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        (function() {
+            $("#restore_form").submit(function (e) {
+                e.preventDefault();
+                var email = $("[name='email']").val();
+                $.ajax({
+                    type: "POST",
+                    url: "{{ path_for('restore') }}",
+                    data: { email: email },
+                    dataType: "json",
+                    success: function(data){
+                        if (data.st)
+                            $("#st_msg").attr('class', "alert alert-danger m-0 mt-2 p-2").text(data.msg);
+                        else
+                            $("#st_msg").attr('class', "alert alert-success m-0 mt-2 p-2").text(data.msg);
+                    },
+                    failure: function(errMsg) {} // console.log(errMsg); }
+                });
+            });
+        })();
+    </script>
+{% endblock %}

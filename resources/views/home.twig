@@ -1,0 +1,189 @@
+{% extends 'templates/app.twig' %}
+
+{% block title %} Search - {% endblock %}
+
+{% block content %}
+    <style>
+        .block_scrin {
+            display: flex;
+            align-items: center;
+            position: fixed;
+            top: 0px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 9999;
+        }
+
+        .block_scrin > span {
+            margin: 0px auto;
+            padding: .5rem 1rem;
+            background: rgba(255, 255, 255, 0.75);
+            color: #000;
+            border-radius: 4px;
+        }
+    </style>
+
+    <div class="block_scrin" style="display: none">
+        <span>Serching ...</span>
+    </div>
+
+    <div class="w-100 mb-2 p-2 rounded .bg-white shadow-sm" style="background-color: rgba(255, 255, 255, .5);">
+        <form method="post" id="search_form">
+            <h4>Filters:</h4>
+            <div class="form-row p-2">
+                <div class="form-group w-100 px-4">
+                    <label>Filter by Age: </label> <span id="st1"></span>
+                    <div id="slider-range-1"></div>
+                </div>
+            </div>
+
+            <div class="form-row p-2">
+                <div class="form-group w-100 px-4">
+                    <label>Filter by Distance: </label> <span id="st2"></span>
+                    <div id="slider-range-2"></div>
+                </div>
+            </div>
+
+            <div class="form-row p-2">
+                <div class="form-group w-100 px-4">
+                    <label>Filter by Rating:</label> <span id="st3"></span>
+                    <div id="slider-range-3"></div>
+                </div>
+            </div>
+
+            <div class="form-row p-2">
+                <div class="form-group w-100 px-3">
+                    <label>Filter by tags:</label><br>
+                    {% for tag in tags_list %}
+                        <button type="button" class="btn btn-secondary mb-1" data-toggle=".{{ tag|replace({'#': 'sharp', '+': 'plus', ' ': '_'}) }}">{{ tag }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <h4>Sort by:</h4>
+
+            <div class="form-row p-2 text-center" style="opacity: 0.95;">
+                <div class="col-md-6 col-lg-3 p-2">
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" class="btn btn-outline-secondary w-100" disabled>Age:</button>
+                        <button type="button" class="btn btn-secondary" data-sort="a:asc">&uarr;</button>
+                        <button type="button" class="btn btn-secondary" data-sort="a:desc">&darr;</button>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 p-2">
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" class="btn btn-outline-secondary w-100" disabled>Distance:</button>
+                        <button type="button" class="btn btn-secondary" data-sort="d:asc">&uarr;</button>
+                        <button type="button" class="btn btn-secondary" data-sort="d:desc">&darr;</button>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 p-2">
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" class="btn btn-outline-secondary w-100" disabled>Tags:</button>
+                        <button type="button" class="btn btn-secondary" data-sort="t:asc">&uarr;</button>
+                        <button type="button" class="btn btn-secondary" data-sort="t:desc">&darr;</button>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3 p-2">
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" class="control btn btn-outline-secondary w-100" disabled>Ratings:</button>
+                        <button type="button" class="control btn btn-secondary" data-sort="r:asc">&uarr;</button>
+                        <button type="button" class="control btn btn-secondary" data-sort="r:desc">&darr;</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="w-100 p-0 rounded .bg-white .border" style="background-color: rgba(255, 255, 255, .5);">
+        <div class="row m-0 p-0" id="users_list">
+
+            {% for user in users %}
+                <div class="col-lg-3 col-md-4 p-2 mix{% for tag in user.tags %} {{ tag|replace({'#': 'sharp', '+': 'plus', ' ': '_'}) }}{% endfor %}" data-i="{{ user.interest }}" data-a="{{ user.age }}" data-t="{{ user.identical_tags }}" data-r="{{ user.rating }}" data-d="{{ user.distance }}">
+                    <a href="{{ path_for('home') }}user/{{ user.id }}">
+                    <div class="card" style="background-color: rgba(255, 255, 255, .5);">
+                        <img class="card-img-top img-fluid w-100" src="{{ user.avatar }}">
+                        <div class="card-body p-2 text-center">
+                            <h5 class="card-title m-0">{{ user.firstname }} {{ user.lastname }}</h5>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    {% if user.age %} {{ user.age }} yers{% endif %} |
+                                    {{ user.rating }} |
+                                    {{ user.distance|number_format(2, ',', '.') }} км |
+                                    {% if user.is_online %}Online{% else %}Offline{% endif %}
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                    </a>
+                </div>
+            {% endfor %}
+
+
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block scripts %}
+
+    <script>
+        (function() {
+            var who = "{{ who }}";
+            var whom = "0";
+            // console.log(who + " / " + whom);
+            var host = window.location.hostname;
+            var conn = new WebSocket('ws://'+host+':8083/?who=' + who + '&whom=' + whom);
+            conn.onopen = function (e) {}; // console.log("Connection established!"); };
+            conn.onmessage = function (e) {
+                var data = $.parseJSON(e.data);
+
+                if (data.type) {
+                    var text = '';
+                    if (data.type === 'view')
+                        text = "<a href='/user/"+data.who+"'>User</a> visit your page.";
+                    else if (data.type === 'connect' || data.type === 'disconnect')
+                        text = "<a href='/user/"+ data.who +"'><b>User</b><a/> " + data.type + "ed you.";
+                    else if(data.type === 'msg')
+                        text = "<a href='/user/"+ data.who +"'><b>" + data.sender + "</b></a>: <br>" + data.msg;
+                    else
+                        text = "<a href='/user/"+ data.who +"'><b>User</b></a> "+data.type+" you.";
+                    add_notif(text);
+                    update_notif();
+                }
+            };
+
+            function send_event(data) {
+                data.who = who;
+                data.whom = whom;
+                conn.send(JSON.stringify(data));
+            }
+
+            function add_notif(text) {
+                var notifs = $('#notifs');
+                var newn = $("<div class=\"alert alert-success p-2\" >" + text + "</div>");
+
+                var audio = new Audio('/telegram.mp3');
+                audio.play();
+
+                notifs.append(newn);
+                setTimeout(function () {
+                    newn.remove();
+                }, 5000);
+            }
+
+            function update_notif() {
+                var notif = $("#new_notif");
+                var n = Number(notif.text());
+                notif.text(n+1);
+                notif.show();
+            }
+        })();
+    </script>
+
+    <script src="/js/mixitup.min.js"></script>
+    <script src="/js/home.js"></script>
+{% endblock %}

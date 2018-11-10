@@ -1,0 +1,23 @@
+<nav class="navbar navbar-expand navbar-dark" id="header_menu">
+    <div class="container">
+        <a class="navbar-brand" href="{{ path_for('home') }}">
+            <span class="text-warning">MATCHA</span>.UNIT
+        </a>
+
+        <ul class="navbar-nav">
+            {% if auth.check %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path_for('auth.signout') }}">Выход</a>
+                </li>
+            {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path_for('auth.signin') }}">Вход</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ path_for('auth.signup') }}">Регистрация</a>
+                </li>
+            {% endif %}
+        </ul>
+
+    </div>
+</nav>
