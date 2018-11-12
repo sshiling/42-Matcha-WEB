@@ -9,7 +9,7 @@ Matcha is a real challenging project because of user real time interactions and 
 I've done this project with my awesome teammate @oivasenk.
 
 For users profiles data we used an open information about School students. <br>
-PHP Ratchet WebSockets for real time events.
+PHP Ratchet WebSockets for real time events. <br>
 MySQL for data storing. <br>
 
 ### Registration and Signing-in
