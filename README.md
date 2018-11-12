@@ -105,3 +105,5 @@ A user must be notified in real time6 of the following events:
 • A connected user “unliked” you.
 A user must be able to see, from any page that a notification hasn’t been read.
 </pre>
+
+#### More about School 42 and UNIT Factory you can find here: https://en.wikipedia.org/wiki/42_(school)
