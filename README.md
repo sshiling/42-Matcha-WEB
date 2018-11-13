@@ -13,7 +13,7 @@ For users profiles data we used an open information about School students. <br>
 PHP Ratchet WebSockets for real time events. <br>
 MySQL for data storing. <br>
 
-#### To run project:
+### To run project:
 1. Change config.php if needed.
 2. Add it to your MAMP htdocs directory.
 3. Go to localhost:8080/setup.php to setup database.
