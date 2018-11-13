@@ -13,6 +13,12 @@ For users profiles data we used an open information about School students. <br>
 PHP Ratchet WebSockets for real time events. <br>
 MySQL for data storing. <br>
 
+### Filters:
+![](Filters.gif)
+
+### Chat:
+![](Chat.gif)
+
 ### Registration and Signing-in
 <pre>
 The app must allow a user to register asking at least an email address, a username, a last name,
