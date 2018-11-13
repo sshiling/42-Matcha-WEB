@@ -101,8 +101,7 @@ must be able to “unlike” or be disconnected from that profile.
 
 ### Chat
 <pre>
-When two users are connected,
-they must be able to “chat” in real time. How you will
+When two users are connected, they must be able to “chat” in real time. How you will
 implement the chat is totally up to you. The user must be able to see from any page if
 a new message is received.
 </pre>
